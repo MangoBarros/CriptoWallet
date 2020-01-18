@@ -4,7 +4,8 @@ export default class ExchangeMoney extends React.Component {
     state = {
         selectedCoin: null,
         convertBit: null,
-        convertEth: null
+        convertEth: null,
+        valueToConvert: 0
     };
 
     constructor(props) {
@@ -13,26 +14,44 @@ export default class ExchangeMoney extends React.Component {
         this.changeBit = this.changeBit.bind(this);
         this.changeEth = this.changeEth.bind(this);
         this.convertMoney = this.convertMoney.bind(this);
+        this.update = this.update.bind(this);
+    }
+    async update({ target: { value } }) {
+        if (this.state.valueToConvert > 0) {
+            const response = await fetch("http://localhost:3001/wallet/e6318b01-1a71-48e6-a02d-ebadecfc4849", {
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json"
+                },
+                method: "PATCH",
+                body: JSON.stringify({
+                    eur: this.props.walletCoinInfo.wallet.eur - this.state.valueToConvert,
+                    btc: this.props.walletCoinInfo.wallet.btc + this.state.convertBit,
+                    eth: this.props.walletCoinInfo.wallet.eth + this.state.convertEth
+                })
+            });
+            const data = await response.json();
+            this.props.update(data);
+        }
     }
 
     changeBit({ target: { value } }) {
-        this.setState(ps => ({ ...ps, selectedCoin: value }));
+        let resultado = this.state.valueToConvert / this.props.walletCoinInfo.currenciesValue.bitcoin.eur;
+        this.setState(ps => ({ ...ps, selectedCoin: value, convertBit: resultado, convertEth: null }));
     }
     changeEth({ target: { value } }) {
-        this.setState(ps => ({ ...ps, selectedCoin: value }));
+        let resultado = this.state.valueToConvert / this.props.walletCoinInfo.currenciesValue.ethereum.eur;
+        this.setState(ps => ({ ...ps, selectedCoin: value, convertEth: resultado, convertBit: null }));
     }
     convertMoney({ target: { value } }) {
-        if (this.state.selectedCoin === "BTC") {
-            let resultado = value / this.props.walletCoinInfo.currenciesValue.bitcoin.eur;
-            this.setState(ps => ({ ...ps, convertBit: resultado }));
-            this.setState(ps => ({ ...ps, convertEth: null }));
-        } else if (this.state.selectedCoin === "ETH") {
-            let resultado = value / this.props.walletCoinInfo.currenciesValue.ethereum.eur;
-            this.setState(ps => ({ ...ps, convertEth: resultado }));
-            this.setState(ps => ({ ...ps, convertBit: null }));
-        } else {
-            this.setState(ps => ({ ...ps, convertBit: null, convertEth: null }));
-        }
+        let resultado =
+            value / (this.state.selectedCoin === "BTC" ? this.props.walletCoinInfo.currenciesValue.bitcoin.eur : this.props.walletCoinInfo.currenciesValue.ethereum.eur);
+        this.setState(ps => ({
+            ...ps,
+            valueToConvert: value,
+            convertBit: ps.selectedCoin === "BTC" ? resultado : ps.convertBit,
+            convertEth: ps.selectedCoin === "ETH" ? resultado : ps.convertEth
+        }));
     }
     render() {
         if (this.props.walletCoinInfo.isWaitingW || this.props.walletCoinInfo.isRequestingC) {
@@ -78,7 +97,7 @@ export default class ExchangeMoney extends React.Component {
                         <div className='col-4'>
                             <form>
                                 <div className='form-group'>
-                                    <input type='number' className='form-control' id='inputMoney' onChange={this.convertMoney} />
+                                    <input type='number' className='form-control' id='inputMoney' min='0' onChange={this.convertMoney} />
                                     <small id='emailHelp' className='form-text text-muted'>
                                         Insert how much money you want to convert
                                     </small>
@@ -88,7 +107,14 @@ export default class ExchangeMoney extends React.Component {
                     </div>
                     <div className='row'>
                         <div className='col-4' id='resultMoney'>
-                            <h3>{this.state.convertBit ? this.state.convertBit : this.state.convertEth}</h3>
+                            <h3>{this.state.selectedCoin === "BTC" ? this.state.convertBit : this.state.convertEth}</h3>
+                        </div>
+                    </div>
+                    <div className='row'>
+                        <div className='col-4' id='submitBuy'>
+                            <button type='button' className='btn btn-dark' disabled={this.props.walletCoinInfo.wallet.eur < this.state.valueToConvert} onClick={this.update}>
+                                Make the trade
+                            </button>
                         </div>
                     </div>
                 </>
