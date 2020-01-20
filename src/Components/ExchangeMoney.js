@@ -18,7 +18,7 @@ export default class ExchangeMoney extends React.Component {
     }
     async update({ target: { value } }) {
         if (this.state.valueToConvert > 0) {
-            const response = await fetch("http://localhost:3001/wallet/e6318b01-1a71-48e6-a02d-ebadecfc4849", {
+            const response = await fetch("http://localhost:3001/wallet/" + this.props.walletCoinInfo.wallet.id, {
                 headers: {
                     Accept: "application/json",
                     "Content-Type": "application/json"
@@ -54,8 +54,10 @@ export default class ExchangeMoney extends React.Component {
         }));
     }
     render() {
-        if (this.props.walletCoinInfo.isWaitingW || this.props.walletCoinInfo.isRequestingC) {
-            return <div>Nada para já</div>;
+        if (this.props.walletCoinInfo.isWaitingW || !this.props.walletCoinInfo.wallet || this.props.walletCoinInfo.isRequestingC) {
+            return <div>aguardar informação da wallet</div>;
+        } else if (this.props.walletCoinInfo.hasErrorOnFetchingWallet) {
+            return <div>algo correu mal a requsitar a informação da wallet do user.</div>;
         } else {
             return (
                 <>
@@ -99,7 +101,7 @@ export default class ExchangeMoney extends React.Component {
                                 <div className='form-group'>
                                     <input type='number' className='form-control' id='inputMoney' min='0' onChange={this.convertMoney} />
                                     <small id='emailHelp' className='form-text text-muted'>
-                                        Insert how much money you want to convert
+                                        Insert how much money in € you want to convert
                                     </small>
                                 </div>
                             </form>

@@ -23,10 +23,11 @@ class App extends React.Component {
         currenciesValue: null,
         user: null,
         wallet: null,
+        hasErrorOnFetchingWallet: false,
 
         isLogin: false,
 
-        isRequestingWallet: true,
+        isRequestingWallet: false,
         isRequestingCurrencyInfo: true,
         isRequestingUser: true
     };
@@ -37,8 +38,13 @@ class App extends React.Component {
 
     async componentDidMount() {
         await this.getCoinInfo();
-        await this.getWallet();
+
         //await this.getUsers();
+    }
+    componentDidUpdate() {
+        if (!this.state.hasErrorOnFetchingWallet && !this.state.isRequestingWallet && !this.state.wallet && this.state.user) {
+            this.getWallet();
+        }
     }
 
     async getCoinInfo() {
@@ -48,7 +54,7 @@ class App extends React.Component {
 
             this.setState(prevState => ({ ...prevState, currenciesValue: data }));
         } catch (e) {
-            console.log("deu CANA");
+            console.log("Error in conversion values");
         } finally {
             this.setState(prevState => ({ ...prevState, isRequestingCurrencyInfo: false }));
         }
@@ -59,34 +65,21 @@ class App extends React.Component {
     }
 
     changeDataUser(data) {
+        //console.log(data);
         this.setState(ps => ({ ...ps, user: data, isLogin: true, isRequestingUser: false }));
     }
 
-    /*  async getUsers() {
-        try {
-            const responseUser = await fetch("http://localhost:3001/users");
-            const dataUser = await responseUser.json();
-
-            this.setState(prevState => ({ ...prevState, dataUsers: dataUser }));
-
-            //console.log(this.state.wallet);
-        } catch (e) {
-            console.log("Deu Cana");
-        } finally {
-            this.setState(prevState => ({ ...prevState, isRequestingUser: false }));
-        }
-    } */
-
     async getWallet() {
+        this.setState(prevState => ({ ...prevState, isRequestingWallet: true }));
         try {
-            const responseWallet = await fetch("http://localhost:3001/wallet/e6318b01-1a71-48e6-a02d-ebadecfc4849");
+            const responseWallet = await fetch("http://localhost:3001/users/" + this.state.user.id + "/wallet");
             const dataWallet = await responseWallet.json();
 
-            this.setState(prevState => ({ ...prevState, wallet: dataWallet }));
+            this.setState(prevState => ({ ...prevState, wallet: dataWallet, hasErrorOnFetchingWallet: false }));
 
             //console.log(this.state.wallet);
         } catch (e) {
-            console.log("Deu Cana");
+            this.setState(prevState => ({ ...prevState, hasErrorOnFetchingWallet: true }));
         } finally {
             this.setState(prevState => ({ ...prevState, isRequestingWallet: false }));
         }
@@ -123,6 +116,7 @@ class App extends React.Component {
                                 <ExchangeMoney
                                     update={data => this.changeData(data)}
                                     walletCoinInfo={{
+                                        hasErrorOnFetchingWallet: this.state.hasErrorOnFetchingWallet,
                                         wallet: this.state.wallet,
                                         isWaitingW: this.state.isRequestingWallet,
                                         currenciesValue: this.state.currenciesValue,
@@ -139,5 +133,3 @@ class App extends React.Component {
 }
 
 export default App;
-
-//-/users/login

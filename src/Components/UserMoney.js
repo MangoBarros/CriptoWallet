@@ -12,8 +12,7 @@ import React from "react";
 
 class UserMoney extends React.Component {
     render() {
-        //console.log(this.props.userInfo);
-        if (this.props.userInfo.isRequestingWallet || this.props.userInfo.isRequestingUser) {
+        if (this.props.userInfo.isRequestingWallet || !this.props.userInfo.wallet || this.props.userInfo.isRequestingUser) {
             return <h2>Waiting</h2>;
         } else {
             const { name } = this.props.userInfo.user;

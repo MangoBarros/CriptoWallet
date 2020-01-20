@@ -2,17 +2,17 @@ import React from "react";
 export default class LogIn extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { value: "", isRequesting: true };
+        this.state = { value: "", isRequesting: true, hasErrorOnLog: "" };
 
         this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
     }
 
     handleChange(event) {
         this.setState({ value: event.target.value });
     }
 
-    async handleSubmit(event) {
+    async handleSubmit(e) {
+        e.preventDefault();
         await this.makeRequestLog();
     }
     async makeRequestLog() {
@@ -34,6 +34,7 @@ export default class LogIn extends React.Component {
             this.props.updateUser(res);
         } catch (e) {
             console.log(e);
+            this.setState(prevState => ({ ...prevState, hasErrorOnLog: "Esse utilizador não existe" }));
         } finally {
             this.setState(prevState => ({ ...prevState, isRequesting: false }));
         }
@@ -43,11 +44,14 @@ export default class LogIn extends React.Component {
         return (
             <div className='row'>
                 <div className='col-6'>
-                    <form onSubmit={this.handleSubmit}>
+                    <form
+                        onSubmit={e => {
+                            this.handleSubmit(e);
+                        }}>
                         <label htmlFor='exampleInputEmail1'>Email address</label>
                         <input type='email' className='form-control' value={this.state.value} onChange={this.handleChange} />
-                        <small id='emailHelp' className='form-text text-muted'>
-                            We'll never share your email with anyone else.
+                        <small id='emailHelp' className='form-text text-danger my-1'>
+                            {this.state.hasErrorOnLog}
                         </small>
 
                         <input type='submit' className='btn btn-primary' value='Submit' />
